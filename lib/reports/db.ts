@@ -3,7 +3,7 @@ import "server-only";
 import { extractVideoId, type VideoDetails } from "../youtube";
 import type { TranscriptAnalysis } from "../transcript";
 import type { GeminiTranscriptFeedback } from "../gemini";
-import type { CreatorScorecard } from "../scoring";
+import { computeScorecard, type CreatorScorecard, type ScorecardInput } from "../scoring";
 import type { SavedReport } from "../reports";
 import { getSupabaseServiceClient } from "../supabase/server";
 
@@ -105,11 +105,24 @@ export async function getReportById(id: string): Promise<SavedReport | null> {
  * Inserts a new report and returns it (with DB-generated id/createdAt).
  * Throws DuplicateReportError if it violates the uniqueness constraint.
  *
+ * The scorecard is computed SERVER-SIDE here from the report's own inputs — it
+ * is never accepted from the client — so the stored value is authoritative and
+ * tamper-resistant. overall_score / score_version are denormalized from it.
+ *
  * Phase 1: user_id is left null. transcript_hash is a generated column, so it
  * is not set here.
  */
 export async function insertReport(input: NewReportInput): Promise<SavedReport> {
   const supabase = getSupabaseServiceClient();
+
+  const scorecardInput: ScorecardInput = {
+    youtubeUrl: input.youtubeUrl,
+    videoDetails: input.videoDetails,
+    transcriptAnalysis: input.transcriptAnalysis,
+    transcriptText: input.transcriptText,
+    geminiFeedback: input.geminiFeedback,
+  };
+  const scorecard = computeScorecard(scorecardInput);
 
   const { data, error } = await supabase
     .from(TABLE)
@@ -121,6 +134,9 @@ export async function insertReport(input: NewReportInput): Promise<SavedReport> 
       transcript_analysis: input.transcriptAnalysis,
       gemini_feedback: input.geminiFeedback,
       transcript_text: input.transcriptText,
+      scorecard,
+      overall_score: scorecard.overallScore,
+      score_version: scorecard.scoreVersion,
     })
     .select("*")
     .single();
