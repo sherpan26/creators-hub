@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { SavedReport } from "@/lib/reports";
 import { TranscriptFeedback } from "@/components/dashboard/transcript-feedback";
 import { VideoDetails } from "@/components/dashboard/video-details";
+import { Scorecard } from "@/components/reports/scorecard";
 
 type ReportDetailProps = {
   report: SavedReport;
@@ -26,6 +27,10 @@ export function ReportDetail({ report }: ReportDetailProps) {
         <p className="mt-2 text-sm text-slate-400">
           Saved on {new Date(report.createdAt).toLocaleString()}
         </p>
+
+        <div className="mt-8">
+          <Scorecard scorecard={report.scorecard} />
+        </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
           <div className="space-y-4">
