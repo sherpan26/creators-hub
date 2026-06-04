@@ -8,7 +8,7 @@ export const landingFeatures: LandingFeature[] = [
   {
     title: "Video Scorecard",
     description:
-      "Get an instant score for hook, title, thumbnail, pacing, SEO, and overall quality.",
+      "Score your hook, title, packaging, pacing, SEO, and overall quality from your video and transcript.",
     label: "Core MVP",
   },
   {

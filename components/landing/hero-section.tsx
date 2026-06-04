@@ -16,17 +16,23 @@ export function HeroSection() {
         </h1>
 
         <p className="mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-          Paste a YouTube link and get a creator scorecard with practical advice
-          for title, thumbnail, hook, pacing, and search discoverability.
+          Paste a YouTube link, then add your transcript to get a creator
+          scorecard with practical advice on hook, pacing, packaging, and search
+          discoverability.
         </p>
 
         <VideoUrlForm />
 
+        <p className="mt-3 max-w-2xl text-sm text-slate-400">
+          Start with a YouTube URL. You&apos;ll paste the transcript next to
+          generate the full scorecard.
+        </p>
+
         <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-slate-300">
-          <span>Mock data MVP, frontend only</span>
+          <span>Real YouTube data + AI-assisted feedback</span>
           <span className="hidden h-1 w-1 rounded-full bg-slate-500 sm:inline-block" />
-          <Link href="/dashboard" className="font-semibold text-cyan-200 hover:text-cyan-100">
-            Open sample dashboard
+          <Link href="/reports" className="font-semibold text-cyan-200 hover:text-cyan-100">
+            View saved reports
           </Link>
         </div>
       </div>

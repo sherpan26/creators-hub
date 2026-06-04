@@ -10,6 +10,7 @@ import {
 import type { VideoDetails as VideoDetailsType } from "@/lib/youtube";
 import { reportsApi, type NewReportInput } from "@/lib/reports";
 import { TranscriptFeedback } from "./transcript-feedback";
+import { AnalyzingState } from "./analyzing-state";
 
 type TranscriptInputProps = {
   videoDetails?: VideoDetailsType;
@@ -134,6 +135,9 @@ export function TranscriptInput({
   return (
     <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6">
       <h3 className="text-xl font-semibold text-white">Transcript</h3>
+      <p className="mt-2 text-sm text-slate-400">
+        Paste your transcript to generate the full Creator Scorecard.
+      </p>
 
       <textarea
         value={text}
@@ -205,7 +209,11 @@ export function TranscriptInput({
         )}
       </div>
 
-      {analysis ? (
+      {loading ? (
+        <div className="mt-6">
+          <AnalyzingState />
+        </div>
+      ) : analysis ? (
         <div className="mt-6">
           <TranscriptFeedback
             analysis={analysis}

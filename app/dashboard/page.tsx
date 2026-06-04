@@ -1,5 +1,4 @@
-import { AnalysisFlow } from "@/components/dashboard/analysis-flow";
-import { mockAnalysisReport } from "@/lib/mock/dashboard";
+import { AnalysisDashboard } from "@/components/dashboard/analysis-dashboard";
 
 type DashboardPageProps = {
   searchParams: Promise<{ videoUrl?: string }>;
@@ -16,7 +15,7 @@ export default async function DashboardPage({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,0.16),transparent_30%),radial-gradient(circle_at_90%_10%,rgba(59,130,246,0.18),transparent_35%),linear-gradient(to_bottom,rgba(2,6,23,1),rgba(2,6,23,0.95))]" />
 
       <section className="relative mx-auto max-w-6xl">
-        <AnalysisFlow report={mockAnalysisReport} inputVideoUrl={inputVideoUrl} />
+        <AnalysisDashboard inputVideoUrl={inputVideoUrl} />
       </section>
     </main>
   );
