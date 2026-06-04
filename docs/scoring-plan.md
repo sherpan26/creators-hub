@@ -431,12 +431,177 @@ POST `/api/reports` response (and after D, on the report detail page).
 
 ---
 
-## Open decisions (to confirm before implementing)
+## Open decisions (resolved in Phase A/B)
 
-1. **Weights** — use the recommended set (Hook 25 / Pacing 20 / Packaging 20 /
-   Clarity 15 / SEO 12 / Engagement 8), or the original (20/20/20/15/15/10)?
-2. **Thumbnail** — fold into Packaging (no fabricated image score), or keep a
-   placeholder thumbnail score for UI continuity with the mock?
-3. **Age-adjustment** — accept "normalized ratios only, no true age" for v1, or
-   add capturing raw ISO `publishedAt` (a small YouTube-route + schema add) so
-   real age-adjustment becomes possible later?
+1. **Weights** — ✅ recommended set adopted (Hook 25 / Pacing 20 / Packaging 20 /
+   Clarity 15 / SEO 12 / Engagement 8).
+2. **Thumbnail** — ✅ folded into Packaging (no fabricated image score; surfaced
+   only as a qualitative note when Gemini mentions it).
+3. **Age-adjustment** — ✅ normalized ratios only for v1; no `publishedAt`
+   capture / age-adjusted scoring yet.
+
+Phase A (types + constants) and Phase B (`computeScorecard`) are implemented and
+committed; demo invariants pass.
+
+---
+
+# Phase C/E — Scorecard Integration Plan
+
+> Wires the committed `computeScorecard()` into the live Supabase-backed reports
+> flow. Supersedes the earlier persist=E / migration=F ordering: migration-first
+> (C1–C5) is safer. Phase B is committed; no auth/RLS.
+>
+> **Decisions locked for this plan:**
+> 1. Legacy reports: **stored-first, with on-the-fly recompute fallback** at read
+>    time (no DB write).
+> 2. Dashboard preview (old C6): **skipped for now** — stop at C5 (detail page).
+> 3. `overall_score` index: **included now**.
+
+## C.1 Where the scorecard is computed
+
+**Server-side at `POST /api/reports`, inside `insertReport()` in the server-only
+`lib/reports/db.ts`.**
+
+- All five `ScorecardInput` fields are already present in the validated
+  `NewReportInput` (youtubeUrl, videoDetails, transcriptAnalysis, transcriptText,
+  geminiFeedback). It is the single choke point for every write, so every
+  persisted report is guaranteed scored.
+- Server-computed ⇒ authoritative and **tamper-resistant** (a client cannot POST
+  a fake score). Persisted atomically with the row. `computeScorecard` is
+  pure/isomorphic, so importing it into a `server-only` module is clean.
+- **Not** in `/api/gemini/analyze` (single-responsibility; lacks all metrics; the
+  scorecard *composes* Gemini output — circular). **Not** in the client as the
+  source of truth (tamperable, unpersisted, duplicated logic).
+- Putting compute in `insertReport` makes C4 essentially free: the inserted row,
+  selected back via `select("*")`, already carries the scorecard. `validateBody`
+  stays unchanged and must **ignore** any client-supplied `scorecard`.
+
+## C.2 Persistence (yes)
+
+Add three **nullable** columns:
+
+- `scorecard jsonb` — full snapshot (reproducible, carries its own
+  `scoreVersion`). Not nested in `gemini_feedback` (that column is null whenever
+  Gemini fails, yet we still produce a deterministic card).
+- `overall_score integer` — denormalized from `scorecard.overallScore` for cheap
+  sorting/filtering.
+- `score_version text` — denormalized from `scorecard.scoreVersion` for targeted
+  backfills.
+
+Nullable ⇒ additive, no backfill required, existing rows stay valid.
+`overall_score`/`score_version` are derived **server-side** from the computed
+scorecard.
+
+## C.3 Migration (exact)
+
+- **Filename:** `supabase/migrations/20260603130000_add_scorecard_to_saved_reports.sql`
+- Columns, check, and index:
+
+```sql
+-- Phase C1: add creator scorecard columns (additive, nullable, no backfill).
+alter table saved_reports
+  add column scorecard     jsonb,
+  add column overall_score integer,
+  add column score_version text;
+
+alter table saved_reports
+  add constraint chk_overall_score_range
+  check (overall_score is null or (overall_score between 0 and 100));
+
+create index idx_saved_reports_overall_score
+  on saved_reports (overall_score desc nulls last);
+```
+
+- **Old reports:** keep `null` for all three — explicitly allowed.
+- **Ordering caveat:** apply this migration to the Supabase project **before**
+  deploying the C3 code that inserts these columns, or the insert errors on
+  unknown columns. Reads are safe regardless (`select("*")` omits missing columns
+  → mapped to `null`).
+
+## C.4 Phases
+
+| Phase | Scope | Risk |
+| --- | --- | --- |
+| **C1** | Migration only (above). Apply it. | Near-zero (additive/nullable). |
+| **C2** | Types + DB mappers — no behavior change. | Low (typecheck only). |
+| **C3** | Compute scorecard in `insertReport`; write the 3 columns. | Medium (the real behavior change). |
+| **C4** | Return scorecard from the API (mostly automatic). | Low. |
+| **C5** | Display scorecard on the detail page + legacy fallback. | Low/medium (UI). |
+
+C6 (dashboard live preview) is intentionally **out of scope** for now.
+
+## C.5 Legacy reports (stored-first + on-the-fly fallback)
+
+All scorer inputs are already persisted (`video_details`, `transcript_analysis`,
+`gemini_feedback`, `transcript_text`, `youtube_url`), so old rows are not a
+dead-end:
+
+- `row.scorecard` present → use the stored snapshot.
+- `row.scorecard` null → **recompute on the fly in `getReportById`** from stored
+  inputs and render that. No drift risk (there was never a prior stored score;
+  new rows always store their snapshot). **No DB write** (no silent backfill).
+- Final guard: if inputs are insufficient, the UI shows **"Scorecard unavailable
+  for this report."**
+- A one-time backfill (keyed on `score_version is null`) is deferred as optional
+  future work.
+
+## C.6 Files changing, per phase
+
+**C1 — migration**
+- *New:* `supabase/migrations/20260603130000_add_scorecard_to_saved_reports.sql`
+
+**C2 — types + mappers** (no behavior change)
+- `lib/reports.ts` — add `scorecard: CreatorScorecard | null` to `SavedReport`
+  (import the type from `lib/scoring`). Change `NewReportInput` to
+  `Omit<SavedReport, "id" | "createdAt" | "scorecard">` so the client is not
+  expected to send it.
+- `lib/reports/db.ts` — add `scorecard` / `overall_score` / `score_version` to
+  `SavedReportRow`; map `scorecard` in `rowToSavedReport`; apply the same
+  `NewReportInput` omit.
+
+**C3 — compute on save**
+- `lib/reports/db.ts` — in `insertReport`: import `computeScorecard`, build the
+  `ScorecardInput` from `input`, compute, and add `scorecard`,
+  `overall_score: scorecard.overallScore`,
+  `score_version: scorecard.scoreVersion` to the insert payload.
+
+**C4 — return from API**
+- Mostly automatic: inserted row (`select("*")`) → `rowToSavedReport` →
+  `SavedReport.scorecard`, which `POST /api/reports` already returns and
+  `reportsApi.saveReport` already surfaces. Optional: harden `validateBody` to
+  ignore any client-supplied `scorecard`.
+
+**C5 — display on detail page**
+- *New:* `components/reports/scorecard.tsx` — dark-themed display (reuse existing
+  card/grid styling; overall + `ratingLabel`, per-category
+  `score`/`rating`/`reason`/`signals`, strengths/weaknesses/topFixes; thumbnail
+  note folded into Packaging).
+- `components/reports/report-detail.tsx` — render `<Scorecard …>` from
+  `report.scorecard`, with the "unavailable" fallback.
+- `lib/reports/db.ts` — `getReportById` recomputes when `scorecard` is null (the
+  C.5 fallback).
+
+Unchanged: `report-card.tsx` (an optional `SavedReport` field doesn't break it),
+`reports/page.tsx`, the Gemini/YouTube routes, the delete route.
+
+## C.7 Manual test plan
+
+Run in `frontend/`. **Apply the C1 migration to Supabase first.**
+
+1. **Save a new report** — analyze + save from the dashboard; confirm success and
+   redirect to the detail page.
+2. **Scorecard saved in Supabase** —
+   `select id, overall_score, score_version, scorecard from saved_reports order by
+   created_at desc limit 1;` → `scorecard` JSONB populated and well-formed.
+3. **`overall_score`** — same query: integer column matches
+   `scorecard->>'overallScore'`, within 0–100.
+4. **Detail displays the scorecard** — `/reports/[id]` shows overall score,
+   rating, per-category breakdown, strengths/weaknesses/fixes.
+5. **Old report without scorecard doesn't crash** — pick a pre-migration row (or
+   `update saved_reports set scorecard = null, overall_score = null where id =
+   '…';`); open its detail page → on-the-fly fallback renders (or "Scorecard
+   unavailable"); list page still loads.
+6. **Tamper check** — `POST /api/reports` with a bogus `scorecard` in the body →
+   the saved/returned scorecard is the server-computed one.
+7. **Lint/build** — `npm run lint` and `npm run build` pass; optionally re-run the
+   `lib/scoring.demo.ts` invariants via the Phase B `tsc`→Node path.
