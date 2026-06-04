@@ -1,6 +1,7 @@
 import type { VideoDetails } from "./youtube";
 import type { TranscriptAnalysis } from "./transcript";
 import type { GeminiTranscriptFeedback } from "./gemini";
+import type { CreatorScorecard } from "./scoring";
 
 export type SavedReport = {
   id: string;
@@ -11,15 +12,19 @@ export type SavedReport = {
   transcriptAnalysis: TranscriptAnalysis;
   geminiFeedback: GeminiTranscriptFeedback | null;
   transcriptText: string; // Added for duplicate checking
+  // Deterministic creator scorecard. Null for reports saved before scorecards
+  // existed (the detail page recomputes those on the fly from stored inputs).
+  scorecard: CreatorScorecard | null;
 };
 
 /**
- * Payload for creating a report. Excludes the DB-generated `id` and
- * `createdAt`. Structurally matches NewReportInput in lib/reports/db.ts (kept
- * here separately because that module is server-only and cannot be imported
- * into client code).
+ * Payload for creating a report. Excludes the DB-generated `id`/`createdAt` and
+ * the server-generated `scorecard` (computed at save time, never sent by the
+ * client). Structurally matches NewReportInput in lib/reports/db.ts (kept here
+ * separately because that module is server-only and cannot be imported into
+ * client code).
  */
-export type NewReportInput = Omit<SavedReport, "id" | "createdAt">;
+export type NewReportInput = Omit<SavedReport, "id" | "createdAt" | "scorecard">;
 
 // ---------------------------------------------------------------------------
 // Async API client (database-backed via /api/reports).

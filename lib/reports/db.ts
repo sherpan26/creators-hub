@@ -3,6 +3,7 @@ import "server-only";
 import { extractVideoId, type VideoDetails } from "../youtube";
 import type { TranscriptAnalysis } from "../transcript";
 import type { GeminiTranscriptFeedback } from "../gemini";
+import type { CreatorScorecard } from "../scoring";
 import type { SavedReport } from "../reports";
 import { getSupabaseServiceClient } from "../supabase/server";
 
@@ -13,10 +14,11 @@ const TABLE = "saved_reports";
 const UNIQUE_VIOLATION = "23505";
 
 /**
- * Payload accepted when creating a report. Excludes DB-generated fields: the
- * database assigns `id` (gen_random_uuid) and `created_at`.
+ * Payload accepted when creating a report. Excludes DB-generated fields (the
+ * database assigns `id` and `created_at`) and the server-generated `scorecard`
+ * (computed at save time in a later phase, never supplied by the caller).
  */
-export type NewReportInput = Omit<SavedReport, "id" | "createdAt">;
+export type NewReportInput = Omit<SavedReport, "id" | "createdAt" | "scorecard">;
 
 /**
  * Thrown by insertReport when the report duplicates an existing one. Callers
@@ -41,6 +43,11 @@ type SavedReportRow = {
   gemini_feedback: GeminiTranscriptFeedback | null;
   transcript_text: string;
   transcript_hash: string;
+  // Scorecard columns (added in migration 20260603130000). Null for rows saved
+  // before scorecards existed; not yet written by the app (Phase C3).
+  scorecard: CreatorScorecard | null;
+  overall_score: number | null;
+  score_version: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -56,6 +63,8 @@ export function rowToSavedReport(row: SavedReportRow): SavedReport {
     transcriptAnalysis: row.transcript_analysis,
     geminiFeedback: row.gemini_feedback,
     transcriptText: row.transcript_text,
+    // Null-safe: old rows (and any partial select) map to a null scorecard.
+    scorecard: row.scorecard ?? null,
   };
 }
 
