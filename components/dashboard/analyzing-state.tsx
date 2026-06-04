@@ -1,16 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ComponentType } from "react";
+import {
+  PlayIcon,
+  TranscriptIcon,
+  TagIcon,
+  TargetIcon,
+  ScorecardIcon,
+  CheckIcon,
+} from "@/components/ui/icons";
 
-// Steps reflect the real pipeline: fetch metadata, read the pasted transcript,
+// Steps mirror the real pipeline: fetch metadata, read the pasted transcript,
 // review packaging (title/description — not the thumbnail image), score
-// hook/pacing, then assemble the scorecard. Shown only while real analysis runs.
-const ANALYSIS_STEPS = [
-  "Fetching video details",
-  "Reading transcript",
-  "Reviewing video packaging",
-  "Scoring hook and pacing",
-  "Preparing creator scorecard",
+// hook/pacing, then assemble the scorecard. Shown only while analysis runs.
+const ANALYSIS_STEPS: { label: string; Icon: ComponentType<{ className?: string }> }[] = [
+  { label: "Fetching video details", Icon: PlayIcon },
+  { label: "Reading transcript", Icon: TranscriptIcon },
+  { label: "Reviewing video packaging", Icon: TagIcon },
+  { label: "Scoring hook and pacing", Icon: TargetIcon },
+  { label: "Preparing creator scorecard", Icon: ScorecardIcon },
 ];
 
 export function AnalyzingState() {
@@ -43,8 +52,11 @@ export function AnalyzingState() {
 
   return (
     <section className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 sm:p-8">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
-        Analyzing transcript
+      <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-rose-300">
+        <span className="grid h-5 w-5 place-items-center rounded bg-rose-500/15 text-rose-400">
+          <PlayIcon className="h-2.5 w-2.5 translate-x-[0.5px]" />
+        </span>
+        Analysis pipeline
       </p>
       <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
         Building your creator scorecard…
@@ -70,10 +82,11 @@ export function AnalyzingState() {
         {ANALYSIS_STEPS.map((step, index) => {
           const isDone = index < activeStepIndex;
           const isActive = index === activeStepIndex;
+          const Icon = step.Icon;
 
           return (
             <li
-              key={step}
+              key={step.label}
               className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-all duration-300 ${
                 isDone
                   ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100"
@@ -83,25 +96,23 @@ export function AnalyzingState() {
               }`}
             >
               {isDone ? (
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-cyan-300/20 text-cyan-200">
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden>
-                    <path
-                      fillRule="evenodd"
-                      d="M16.704 5.29a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 011.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-cyan-300/20 text-cyan-200">
+                  <CheckIcon className="h-4 w-4" />
                 </span>
               ) : isActive ? (
-                <span className="relative h-5 w-5">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-cyan-300/30" />
-                  <span className="absolute inset-[3px] rounded-full bg-cyan-200" />
+                <span className="relative grid h-6 w-6 place-items-center">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-cyan-300/20" />
+                  <span className="relative grid h-6 w-6 place-items-center rounded-full bg-cyan-300/15 text-cyan-200">
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
                 </span>
               ) : (
-                <span className="h-5 w-5 rounded-full border border-slate-600" />
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-white/5 text-slate-500">
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
               )}
 
-              <span>{step}</span>
+              <span>{step.label}</span>
             </li>
           );
         })}

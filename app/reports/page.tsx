@@ -4,6 +4,7 @@ import type { SavedReport } from "@/lib/reports";
 import { ReportsList } from "@/components/reports/reports-list";
 import { EmptyState } from "@/components/reports/empty-state";
 import { ErrorState } from "@/components/reports/error-state";
+import { BookmarkIcon, PlayIcon } from "@/components/ui/icons";
 
 // Always reflect the latest saved/deleted reports.
 export const dynamic = "force-dynamic";
@@ -24,7 +25,11 @@ export default async function ReportsPage() {
       <div className="relative mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
+              <BookmarkIcon className="h-3.5 w-3.5" />
+              Creator analytics
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-5xl">
               Saved Reports
             </h1>
             {reports ? (
@@ -36,8 +41,9 @@ export default async function ReportsPage() {
           </div>
           <Link
             href="/"
-            className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-400"
           >
+            <PlayIcon className="h-4 w-4" />
             Analyze a Video
           </Link>
         </div>

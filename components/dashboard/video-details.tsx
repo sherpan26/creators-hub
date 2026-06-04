@@ -7,6 +7,7 @@ import {
   fetchYouTubeVideoDetails,
   type YouTubeDetails,
 } from "@/lib/youtube";
+import { PlayIcon } from "@/components/ui/icons";
 
 type VideoDetailsProps = {
   inputVideoUrl?: string;
@@ -98,8 +99,13 @@ export function VideoDetails({
 
   return (
     <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6">
-      <h3 className="text-xl font-semibold text-white">Video Details</h3>
-      <p className="mt-2 text-sm text-slate-400">Fetched from YouTube.</p>
+      <div className="flex items-center gap-2">
+        <span className="grid h-7 w-7 place-items-center rounded-lg bg-rose-500/15 text-rose-400 ring-1 ring-inset ring-rose-500/25">
+          <PlayIcon className="h-3.5 w-3.5 translate-x-[1px]" />
+        </span>
+        <h3 className="text-xl font-semibold text-white">Video Details</h3>
+      </div>
+      <p className="mt-2 text-sm text-slate-400">Metadata fetched from YouTube.</p>
 
       {error && !shown ? (
         <div className="mt-4 space-y-3">

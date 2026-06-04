@@ -11,6 +11,7 @@ import type { VideoDetails as VideoDetailsType } from "@/lib/youtube";
 import { reportsApi, type NewReportInput } from "@/lib/reports";
 import { TranscriptFeedback } from "./transcript-feedback";
 import { AnalyzingState } from "./analyzing-state";
+import { TranscriptIcon } from "@/components/ui/icons";
 
 type TranscriptInputProps = {
   videoDetails?: VideoDetailsType;
@@ -134,7 +135,12 @@ export function TranscriptInput({
 
   return (
     <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6">
-      <h3 className="text-xl font-semibold text-white">Transcript</h3>
+      <div className="flex items-center gap-2">
+        <span className="grid h-7 w-7 place-items-center rounded-lg bg-cyan-300/10 text-cyan-300 ring-1 ring-inset ring-cyan-300/20">
+          <TranscriptIcon className="h-3.5 w-3.5" />
+        </span>
+        <h3 className="text-xl font-semibold text-white">Transcript</h3>
+      </div>
       <p className="mt-2 text-sm text-slate-400">
         Paste your transcript to generate the full Creator Scorecard.
       </p>

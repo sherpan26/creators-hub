@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { YouTubeDetails } from "@/lib/youtube";
 import { VideoDetails } from "./video-details";
 import { TranscriptInput } from "./transcript-input";
+import { AnalyticsIcon, ScorecardIcon, PlayIcon, BookmarkIcon } from "@/components/ui/icons";
 
 type AnalysisDashboardProps = {
   inputVideoUrl?: string;
@@ -23,8 +24,9 @@ export function AnalysisDashboard({ inputVideoUrl }: AnalysisDashboardProps) {
   return (
     <>
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
-          Analyze a Video
+        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
+          <AnalyticsIcon className="h-3.5 w-3.5" />
+          Analysis workspace
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-5xl">
           Analyze your video
@@ -38,14 +40,16 @@ export function AnalysisDashboard({ inputVideoUrl }: AnalysisDashboardProps) {
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/"
-            className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
           >
+            <PlayIcon className="h-3.5 w-3.5" />
             Analyze another video
           </Link>
           <Link
             href="/reports"
-            className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
           >
+            <BookmarkIcon className="h-3.5 w-3.5" />
             View saved reports
           </Link>
         </div>
@@ -66,7 +70,10 @@ export function AnalysisDashboard({ inputVideoUrl }: AnalysisDashboardProps) {
           />
 
           <section className="rounded-3xl border border-dashed border-white/15 bg-slate-900/50 p-6">
-            <h3 className="text-xl font-semibold text-white">Creator Scorecard</h3>
+            <div className="flex items-center gap-2 text-slate-200">
+              <ScorecardIcon className="h-5 w-5 text-cyan-300/70" />
+              <h3 className="text-xl font-semibold text-white">Creator Scorecard</h3>
+            </div>
             <p className="mt-3 text-sm text-slate-400">
               Creator Scorecard will be generated after transcript analysis and
               saving. Once you save, it opens on the report page.
