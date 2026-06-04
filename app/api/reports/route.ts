@@ -61,8 +61,12 @@ export async function GET() {
     const reports = await listReports();
     return Response.json(reports);
   } catch (error) {
+    // Log the raw error (may include Supabase details); return a generic body.
     console.error("GET /api/reports failed:", error);
-    return Response.json({ error: "Failed to load reports." }, { status: 500 });
+    return Response.json(
+      { error: "load_failed", message: "Could not load reports. Please try again." },
+      { status: 500 },
+    );
   }
 }
 
@@ -71,12 +75,18 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+    return Response.json(
+      { error: "invalid_json", message: "Request body must be valid JSON." },
+      { status: 400 },
+    );
   }
 
   const validation = validateBody(body);
   if (!validation.ok) {
-    return Response.json({ error: validation.message }, { status: 400 });
+    return Response.json(
+      { error: "invalid_request", message: validation.message },
+      { status: 400 },
+    );
   }
 
   try {
@@ -89,7 +99,11 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
+    // Log the raw error (may include Supabase details); return a generic body.
     console.error("POST /api/reports failed:", error);
-    return Response.json({ error: "Failed to save report." }, { status: 500 });
+    return Response.json(
+      { error: "save_failed", message: "Could not save report. Please try again." },
+      { status: 500 },
+    );
   }
 }

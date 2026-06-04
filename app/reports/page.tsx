@@ -1,13 +1,22 @@
 import Link from "next/link";
 import { listReports } from "@/lib/reports/db";
+import type { SavedReport } from "@/lib/reports";
 import { ReportsList } from "@/components/reports/reports-list";
 import { EmptyState } from "@/components/reports/empty-state";
+import { ErrorState } from "@/components/reports/error-state";
 
 // Always reflect the latest saved/deleted reports.
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const reports = await listReports();
+  // A DB/server failure here must show a friendly panel, not crash the route.
+  // null distinguishes "load failed" from "loaded but empty" (an empty array).
+  let reports: SavedReport[] | null = null;
+  try {
+    reports = await listReports();
+  } catch (error) {
+    console.error("GET /reports: failed to list reports:", error);
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 px-6 py-10 text-white sm:py-14">
@@ -18,10 +27,12 @@ export default async function ReportsPage() {
             <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
               Saved Reports
             </h1>
-            <p className="mt-2 text-sm text-slate-400">
-              You have {reports.length} saved report
-              {reports.length !== 1 ? "s" : ""}.
-            </p>
+            {reports ? (
+              <p className="mt-2 text-sm text-slate-400">
+                You have {reports.length} saved report
+                {reports.length !== 1 ? "s" : ""}.
+              </p>
+            ) : null}
           </div>
           <Link
             href="/"
@@ -31,7 +42,12 @@ export default async function ReportsPage() {
           </Link>
         </div>
 
-        {reports.length > 0 ? (
+        {reports === null ? (
+          <ErrorState
+            title="Could not load reports"
+            message="Could not load saved reports. Please try again."
+          />
+        ) : reports.length > 0 ? (
           <ReportsList reports={reports} />
         ) : (
           <EmptyState />

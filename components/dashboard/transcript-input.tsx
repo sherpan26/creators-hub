@@ -112,7 +112,7 @@ export function TranscriptInput({
       setSaveError(result.error || "This report has already been saved.");
     } else {
       setSaveStatus("error");
-      setSaveError(result.error || "An unknown error occurred.");
+      setSaveError(result.error || "Could not save report. Please try again.");
     }
   }
 

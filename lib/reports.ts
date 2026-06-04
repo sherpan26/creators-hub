@@ -78,11 +78,12 @@ async function postReport(input: NewReportInput): Promise<SaveReportResult> {
     return { success: false, duplicate: true, error: DUPLICATE_MESSAGE };
   }
 
-  // Try to surface the API's error message, but fall back to a generic one.
-  let message = "Could not save report.";
+  // Prefer the API's friendly `message`, falling back to a generic one. We do
+  // not surface raw `error` codes to the user.
+  let message = "Could not save report. Please try again.";
   try {
-    const body = (await res.json()) as { message?: string; error?: string };
-    message = body.message || body.error || message;
+    const body = (await res.json()) as { message?: string };
+    message = body.message || message;
   } catch {
     // ignore body parse failures
   }
