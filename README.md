@@ -1,5 +1,9 @@
 # Creator's Hub
 
+**Live Demo:** https://creators-hub-blue.vercel.app/
+
+> Demo requires valid API keys in the deployed environment for YouTube metadata, Gemini feedback, and Supabase persistence.
+
 A full-stack web app that gives small YouTube creators an **AI-assisted, deterministic scorecard** for a video — before they post. Paste a YouTube URL and a transcript, and Creator's Hub returns an honest, explainable breakdown of the video's hook, pacing, packaging, SEO, engagement, and clarity, then saves it as a report you can revisit.
 
 ## The problem it solves
